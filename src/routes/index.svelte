@@ -43,17 +43,7 @@
 		Mim = mim;
 		tim = mim.getTim();
 		// load account data
-		fetch(`${BASE_URL}/api/get-accounts-all`, {
-			method: 'get'
-		})
-			.then((res) => {
-				return res.json();
-			})
-			.then((res) => {
-				if (res.code == 200) {
-					cloudAccounts = res.accounts;
-				}
-			});
+		loadCloudAccounts();
 	});
 
 	function onLoginHandler(evt) {
@@ -69,11 +59,11 @@
 							userSig: res.data.token
 						})
 						.then((res) => {
-							console.log('data', res.data);
 							if (res.data.errorCode == 0) {
 								// 登录成功
 								if (res.data.repeatLogin === true) {
 									// 重复登录
+									alert('请勿重复登录');
 								}
 								tim.on(Mim.getTIM().EVENT.SDK_READY, onSdkReady);
 							} else {
@@ -92,16 +82,12 @@
 			});
 	}
 
-	function onAccountDeleteHandler(evt) {
-		evt.preventDefault();
-	}
+	function onAccountDeleteHandler(evt) {}
 
 	function onSdkReady(_evt) {
 		isLogin = true;
 		// get group list
 		getGroupList();
-		// load currentCloudGroups
-		loadCloudAccounts();
 		// listen new message
 		tim.on(Mim.getTIM().EVENT.MESSAGE_RECEIVED, (evt) => {
 			if (evt.data != null && evt.data.length >= 1) {
@@ -164,7 +150,9 @@
 			.then((res) => {
 				if (res.code == 0) {
 					groups = res.data.groupList;
-					group = 'group-start';
+					// group = '';
+					// load currentCloudGroups
+					loadCloudGroups();
 				}
 			})
 			.catch((err) => {
@@ -182,6 +170,33 @@
 			.then((res) => {
 				if (res.code == 0) {
 					members = res.data.memberList;
+					const groupName = group.split('λ')[0];
+					const groupId = group.split('λ')[1];
+					const currentGroup = currentCloudGroups.find((val) => {
+						if (val['group-id'] == groupId) {
+							return true;
+						}
+					});
+					if (currentGroup != undefined) {
+						console.log(currentGroup);
+						if (currentGroup['user-name1'] != null || currentGroup['user-name1'] != '') {
+							user1 = `${currentGroup['user-name1']}λ${currentGroup['user-id1']}`;
+						}
+						if (currentGroup['user-name2'] != null || currentGroup['user-name2'] != '') {
+							user2 = `${currentGroup['user-name2']}λ${currentGroup['user-id2']}`;
+						}
+						delayStart = currentGroup['delay-start'];
+						delayEnd = currentGroup['delay-end'];
+						enabled = currentGroup['enabled'];
+						mMsgs = currentGroup['msgs'];
+					} else {
+						user1 = '';
+						user2 = '';
+						delayStart = 0;
+						delayEnd = 0;
+						enabled = true;
+						mMsgs = '';
+					}
 				}
 			})
 			.catch((err) => {
@@ -198,7 +213,21 @@
 	}
 
 	function onSaveAccountToCloudHandler(evt) {
-		evt.preventDefault();
+		fetch(`${BASE_URL}/api/save-account/${account}/${password}`)
+			.then((res) => {
+				return res.json();
+			})
+			.then((res) => {
+				if (res.code == 200) {
+					loadCloudAccounts();
+					alert('保存账号成功');
+				} else {
+					alert('保存账号失败: ${res.msg}');
+				}
+			})
+			.catch((err) => {
+				alert('保存账号失败');
+			});
 	}
 
 	function onSaveGroupHandler(evt) {
@@ -221,7 +250,6 @@
 			enabled: enabled,
 			msgs: mMsgs
 		};
-		// console.log(nowGroup);
 		fetch(`${BASE_URL}/api/save-group`, {
 			method: 'post',
 			cache: 'no-cache',
@@ -235,17 +263,35 @@
 			})
 			.then((res) => {
 				if (res.code == 200) {
-					loadCloudAccounts();
+					loadCloudGroups();
 					alert(`保存成功`);
+				} else {
+					alert(`保存失败:${res.msg}`);
 				}
 			})
 			.catch((err) => {
 				alert(`保存失败`);
 			});
 	}
-	function onDeleteGroupHandler(evt) {}
+	function onDeleteGroupHandler(evt) {
+		fetch(`${BASE_URL}/api/delete-group/${account}/${encodeURIComponent(group.split('λ')[1])}`)
+			.then((res) => {
+				return res.json();
+			})
+			.then((res) => {
+				if (res.code == 200) {
+					loadCloudGroups(true);
+					alert('删除群组成功');
+				} else {
+					alert(`删除群组失败：${res.msg}`);
+				}
+			})
+			.catch((err) => {
+				alert('删除群组失败');
+			});
+	}
 
-	function loadCloudAccounts() {
+	function loadCloudGroups(reload = false) {
 		fetch(`${BASE_URL}/api/get-groups-by-account/${account}`)
 			.then((res) => {
 				return res.json();
@@ -253,11 +299,32 @@
 			.then((res) => {
 				if (res.code == 200) {
 					currentCloudGroups = res.groups;
+					if (currentCloudGroups.length > 0) {
+						if (group == '' || reload) {
+							const firstGroup = currentCloudGroups[0];
+							group = `${firstGroup['group-name']}λ${firstGroup['group-id']}`;
+						}
+					} else {
+						group = '';
+					}
 					console.log(currentCloudGroups);
 				}
 			})
 			.catch((err) => {
 				alert('获取云端群组失败');
+			});
+	}
+	function loadCloudAccounts() {
+		fetch(`${BASE_URL}/api/get-accounts-all`, {
+			method: 'get'
+		})
+			.then((res) => {
+				return res.json();
+			})
+			.then((res) => {
+				if (res.code == 200) {
+					cloudAccounts = res.accounts;
+				}
 			});
 	}
 	function onAccountInputHandler(evt) {
@@ -266,7 +333,6 @@
 				return res.json();
 			})
 			.then((res) => {
-				console.log(res);
 				if (res.code == 200) {
 					password = res.password;
 				} else {
@@ -280,6 +346,9 @@
 
 	$: if (account) {
 		onAccountInputHandler(null);
+	}
+	$: if (group) {
+		onGroupsSelectedHandle(null);
 	}
 </script>
 
@@ -333,6 +402,8 @@
 群组名：
 <select name="groups" id="groups" bind:value={group} on:change={onGroupsSelectedHandle}>
 	{#if groups.length == 0}
+		<option value="">请先登录</option>
+	{:else}
 		<option value="">下拉选择群名</option>
 	{/if}
 	{#each groups as { groupID, name }}
@@ -346,6 +417,8 @@
 用户名1：
 <select name="members1" id="members1" bind:value={user1}>
 	{#if members.length == 0}
+		<option value="">请先选择群组</option>
+	{:else}
 		<option value="">下拉选择群组</option>
 	{/if}
 	{#each members as { userID, nick }}
@@ -357,6 +430,8 @@
 用户名2：
 <select name="members1" id="members1" bind:value={user2}>
 	{#if members.length == 0}
+		<option value="">请先选择群组</option>
+	{:else}
 		<option value="">下拉选择群组</option>
 	{/if}
 	{#each members as { userID, nick }}
