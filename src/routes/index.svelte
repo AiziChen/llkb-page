@@ -54,6 +54,7 @@
 			})
 			.then((res) => {
 				if (res.code == 200) {
+					tim.setLogLevel(3);
 					tim
 						.login({
 							userID: res.data.userid,
@@ -185,7 +186,7 @@
 			.getGroupMemberList({ groupID: groupId, count: 100, offset: offset })
 			.then((res) => {
 				if (res.code == 0) {
-					console.log('member-data', res.data);
+					// console.log('member-data', res.data);
 					if (members.length > 0 && offset == 0) {
 						members = [];
 					}
@@ -205,7 +206,7 @@
 							}
 						});
 						if (currentGroup != undefined) {
-							console.log(currentGroup);
+							// console.log(currentGroup);
 							if (currentGroup['user-name1'] != null || currentGroup['user-name1'] != '') {
 								user1 = `${currentGroup['user-name1']}λ${currentGroup['user-id1']}`;
 							}
@@ -335,7 +336,7 @@
 					} else {
 						group = '';
 					}
-					console.log(currentCloudGroups);
+					// console.log(currentCloudGroups);
 				}
 			})
 			.catch((err) => {
