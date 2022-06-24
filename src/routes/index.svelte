@@ -27,6 +27,7 @@
 	let enabled = true;
 	let mMsgs = '';
 	let isLogin = false;
+	let connectState = 'disconnected';
 
 	function containGroupId(groupId) {
 		return (
@@ -86,6 +87,7 @@
 
 	function onSdkReady(_evt) {
 		isLogin = true;
+		connectState = 'connected';
 		// get group list
 		getGroupList();
 		// listen new message
@@ -115,7 +117,7 @@
 								flag = false;
 							}
 						}
-						if (flag && groupId == group['group-id'] && line != null) {
+						if (flag && groupId == group['group-id'] && line != null && group['enabled']) {
 							const delay = delayStart + Math.round(Math.random() * (delayEnd - delayStart));
 							let index = Math.round(Math.random() * (line.length - 2)) + 1;
 							setTimeout(() => {
@@ -142,6 +144,20 @@
 				}
 			}
 		});
+		// listen on net-state-changed
+		tim.on(Mim.getTIM().EVENT.NET_STATE_CHANGE, (evt) => {
+			const types = Mim.getTIM().TYPES;
+			if (types.NET_STATE_CONNECTED == evt.data.state) {
+				// 已连接
+				connectState = 'connected';
+			} else if (types.NET_STATE_CONNECTING == evt.data.state) {
+				// 连接中
+				connectState = 'connecting';
+			} else if (types.NET_STATE_DISCONNECTED == evt.data.state) {
+				// 未连接
+				connectState = 'disconnected';
+			}
+		});
 	}
 
 	function getGroupList() {
@@ -160,42 +176,54 @@
 			});
 	}
 
-	function onGroupsSelectedHandle(evt) {
+	function onGroupsSelectedHandle(evt, offset = 0) {
 		if (!group.includes('λ')) {
 			return;
 		}
 		const groupId = group.split('λ')[1];
 		tim
-			.getGroupMemberList({ groupID: groupId, count: 30, offset: 0 })
+			.getGroupMemberList({ groupID: groupId, count: 100, offset: offset })
 			.then((res) => {
 				if (res.code == 0) {
-					members = res.data.memberList;
-					const groupName = group.split('λ')[0];
-					const groupId = group.split('λ')[1];
-					const currentGroup = currentCloudGroups.find((val) => {
-						if (val['group-id'] == groupId) {
-							return true;
-						}
-					});
-					if (currentGroup != undefined) {
-						console.log(currentGroup);
-						if (currentGroup['user-name1'] != null || currentGroup['user-name1'] != '') {
-							user1 = `${currentGroup['user-name1']}λ${currentGroup['user-id1']}`;
-						}
-						if (currentGroup['user-name2'] != null || currentGroup['user-name2'] != '') {
-							user2 = `${currentGroup['user-name2']}λ${currentGroup['user-id2']}`;
-						}
-						delayStart = currentGroup['delay-start'];
-						delayEnd = currentGroup['delay-end'];
-						enabled = currentGroup['enabled'];
-						mMsgs = currentGroup['msgs'];
+					console.log('member-data', res.data);
+					if (members.length > 0 && offset == 0) {
+						members = [];
+					}
+					if (res.data.offset != 0) {
+						members = members.concat(
+							res.data.memberList.filter((val) => {
+								return val['role'] == 'Admin' || val['role'] == 'Owner';
+							})
+						);
+						onGroupsSelectedHandle(evt, offset + 100);
 					} else {
-						user1 = '';
-						user2 = '';
-						delayStart = 0;
-						delayEnd = 0;
-						enabled = true;
-						mMsgs = '';
+						const groupName = group.split('λ')[0];
+						const groupId = group.split('λ')[1];
+						const currentGroup = currentCloudGroups.find((val) => {
+							if (val['group-id'] == groupId) {
+								return true;
+							}
+						});
+						if (currentGroup != undefined) {
+							console.log(currentGroup);
+							if (currentGroup['user-name1'] != null || currentGroup['user-name1'] != '') {
+								user1 = `${currentGroup['user-name1']}λ${currentGroup['user-id1']}`;
+							}
+							if (currentGroup['user-name2'] != null || currentGroup['user-name2'] != '') {
+								user2 = `${currentGroup['user-name2']}λ${currentGroup['user-id2']}`;
+							}
+							delayStart = currentGroup['delay-start'];
+							delayEnd = currentGroup['delay-end'];
+							enabled = currentGroup['enabled'];
+							mMsgs = currentGroup['msgs'];
+						} else {
+							user1 = '';
+							user2 = '';
+							delayStart = 0;
+							delayEnd = 0;
+							enabled = true;
+							mMsgs = '';
+						}
 					}
 				}
 			})
@@ -384,6 +412,13 @@
 			<span>已登录</span>
 		{:else}
 			<span>未登录</span>
+		{/if}
+		{#if connectState == 'disconnected'}
+			<span>未连接</span>
+		{:else if connectState == 'connecting'}
+			<span>连接中...</span>
+		{:else if connectState == 'connected'}
+			<span>已连接</span>
 		{/if}
 	</label>
 	<br />
