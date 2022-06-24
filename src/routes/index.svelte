@@ -54,7 +54,7 @@
 			})
 			.then((res) => {
 				if (res.code == 200) {
-					tim.setLogLevel(3);
+					tim.setLogLevel(4);
 					tim
 						.login({
 							userID: res.data.userid,
