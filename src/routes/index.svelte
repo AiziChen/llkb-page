@@ -119,7 +119,9 @@
 							}
 						}
 						if (flag && groupId == group['group-id'] && line != null && group['enabled']) {
-							const delay = delayStart + Math.round(Math.random() * (delayEnd - delayStart));
+							const delay =
+								group['delay-start'] +
+								Math.round(Math.random() * (group['delay-end'] - group['delay-start']));
 							let index = Math.round(Math.random() * (line.length - 2)) + 1;
 							setTimeout(() => {
 								const message = tim.createTextMessage({
