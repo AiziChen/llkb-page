@@ -29,6 +29,8 @@
 	let isLogin = false;
 	let connectState = 'disconnected';
 
+	let argGroup = '';
+
 	function containGroupId(groupId) {
 		return (
 			currentCloudGroups.filter((g) => {
@@ -304,8 +306,9 @@
 				alert(`保存失败`);
 			});
 	}
-	function onDeleteGroupHandler(evt) {
-		fetch(`${BASE_URL}/api/delete-group/${account}/${encodeURIComponent(group.split('λ')[1])}`)
+	function onDeleteGroupHandler(evt, groupId) {
+		// const groupId = group.split('λ')[1];
+		fetch(`${BASE_URL}/api/delete-group/${account}/${encodeURIComponent(groupId)}`)
 			.then((res) => {
 				return res.json();
 			})
@@ -375,6 +378,18 @@
 			});
 	}
 
+	function onLoadGroupArgumentsHandler(evt) {
+		if (!argGroup.includes('λ')) {
+			return;
+		}
+		const argGroupId = argGroup.split('λ')[1];
+		const currentArgGroup = currentCloudGroups.find((g) => g['group-id'] == argGroupId);
+		mMsgs = currentArgGroup['msgs'];
+		delayStart = currentArgGroup['delay-start'];
+		delayEnd = currentArgGroup['delay-end'];
+		enabled = currentArgGroup['enabled'];
+	}
+
 	$: if (account) {
 		onAccountInputHandler(null);
 	}
@@ -437,6 +452,27 @@
 
 <hr />
 
+载入群组配置：
+<select
+	name="cloudGroups"
+	id="cloudGroups"
+	bind:value={argGroup}
+	on:change={onLoadGroupArgumentsHandler}
+>
+	{#if isLogin}
+		<option value="">下拉选择云端配置</option>
+	{:else}
+		<option value="">请先登录</option>
+	{/if}
+	{#each currentCloudGroups as g}
+		<option value="{g['group-name']}λ{g['group-id']}">{g['group-name']}</option>
+	{/each}
+</select>
+<button on:click|preventDefault={(evt) => onDeleteGroupHandler(evt, argGroup.split('λ')[1])}
+	>删除群组配置</button
+>
+<br />
+
 群组名：
 <select name="groups" id="groups" bind:value={group} on:change={onGroupsSelectedHandle}>
 	{#if groups.length == 0}
@@ -450,7 +486,9 @@
 </select>
 <button on:click|preventDefault={(_evt) => getGroupList()}>刷新</button>
 <button on:click|preventDefault={onSaveGroupHandler}>保存群组</button>
-<button on:click|preventDefault={onDeleteGroupHandler}>删除群组</button>
+<button on:click|preventDefault={(evt) => onDeleteGroupHandler(evt, group.split('λ')[1])}
+	>删除群组</button
+>
 <br />
 用户名1：
 <select name="members1" id="members1" bind:value={user1}>
