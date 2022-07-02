@@ -9,8 +9,8 @@
 	import FormField from '@smui/form-field';
 	import { Input } from '@smui/textfield';
 
-	const BASE_URL = 'http://localhost:8919';
-	//const BASE_URL = 'http://quanye.org:8919';
+	// const BASE_URL = 'http://localhost:8919';
+	const BASE_URL = 'http://quanye.org:8919';
 
 	let Mim = null;
 	let tim = null;
