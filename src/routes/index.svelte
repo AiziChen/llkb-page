@@ -4,9 +4,13 @@
 
 <script>
 	import { onMount } from 'svelte';
+	import Button, { Label } from '@smui/button';
+	import Dialog, { Title, Content, Actions } from '@smui/dialog';
+	import FormField from '@smui/form-field';
+	import { Input } from '@smui/textfield';
 
-	// const BASE_URL = 'http://localhost:8999';
-	const BASE_URL = 'http://quanye.org:8999';
+	const BASE_URL = 'http://localhost:8919';
+	//const BASE_URL = 'http://quanye.org:8919';
 
 	let Mim = null;
 	let tim = null;
@@ -14,6 +18,7 @@
 	let cloudAccounts = [];
 	let account = '';
 	let password = '';
+	let token = '';
 	let currentCloudAccount = {};
 	let currentCloudGroups = [];
 
@@ -30,6 +35,12 @@
 	let connectState = 'disconnected';
 
 	let argGroup = '';
+
+	let searchValue = '';
+	let searchUid = '';
+	let addFriendDialogOpen = false;
+	let addFriendRemark = '';
+	let addFriendWording = '';
 
 	function containGroupId(groupId) {
 		return (
@@ -56,11 +67,12 @@
 			})
 			.then((res) => {
 				if (res.code == 200) {
+					token = res.data.token;
 					tim.setLogLevel(4);
 					tim
 						.login({
 							userID: res.data.userid,
-							userSig: res.data.token
+							userSig: res.data.imtoken
 						})
 						.then((res) => {
 							if (res.data.errorCode == 0) {
@@ -390,31 +402,52 @@
 		enabled = currentArgGroup['enabled'];
 	}
 
+	function onSearchUserHandler(evt) {
+		if (token == '') {
+			alert('请先登录');
+			return;
+		}
+		fetch(`${BASE_URL}/api/do-search-user/${token}/${searchValue}`)
+			.then((res) => {
+				return res.json();
+			})
+			.then((res) => {
+				if (res.code == 200) {
+					if (res.type == 0) {
+						alert(res.msg);
+					} else {
+						searchUid = res.data.uid;
+					}
+				} else {
+					alert('查找用户失败');
+					searchUid = '';
+				}
+			})
+			.catch((err) => {
+				alert('查找用户失败：' + err.message);
+				searchUid = '';
+			});
+	}
+
+	function onAddUserHandler(evt) {}
+
 	$: if (account) {
 		onAccountInputHandler(null);
 	}
 	$: if (group) {
 		onGroupsSelectedHandle(null);
 	}
+	$: if (searchUid == '') {
+		addFriendDialogOpen = false;
+	} else {
+		addFriendDialogOpen = true;
+	}
 </script>
 
 <svelte:head>
-	<title>聊聊看吧自动回复</title>
+	<title>诺呗自动回复</title>
 	<meta name="description" content="llkb" />
 </svelte:head>
-
-云端账号：
-<select name="cloudAccounts" id="cloudAccounts" bind:value={account}>
-	{#if cloudAccounts.length == 0}
-		<option value="">加载中...</option>
-	{:else}
-		<option value="">下拉选择云端账号</option>
-	{/if}
-	{#each cloudAccounts as { account, password }}
-		<option value={account}>{account}</option>
-	{/each}
-</select>
-<br />
 
 <form action="#">
 	<label for="phoneNumber">
@@ -451,6 +484,65 @@
 </form>
 
 <hr />
+
+搜索朋友：
+<input type="text" placeholder="搜索诺呗号或手机号" bind:value={searchValue} />
+<input type="button" value="搜索" on:click|preventDefault={onSearchUserHandler} />
+<!-- {#if searchUid != ''}{/if} -->
+<Dialog
+	bind:open={addFriendDialogOpen}
+	aria-labelledby="add-friend-title"
+	aria-describedby="add-friend-content"
+	on:SMUIDialog:closed={(evt) => {
+		if (evt.detail.action == 'ok') {
+			// 提交添加好友申请
+			tim
+				.addFriend({
+					to: searchUid,
+					source: 'AddSource_Type_Android',
+					remark: addFriendRemark,
+					wording: addFriendWording
+				})
+				.then((res) => {
+					const { code } = res.data;
+					if (code == 0) {
+						alert('添加成功');
+					} else if (code == 30539) {
+						alert('发送加友信息成功。对方设置了加友权限，您需要经过他的同意才能成功添加他为好友。');
+					}
+				})
+				.catch((err) => {
+					alert('添加朋友失败：' + err.message);
+				});
+		}
+		searchUid = '';
+	}}
+>
+	<Title id="add-friend-title">添加新朋友</Title>
+	<Content id="add-friend-content">
+		<div>
+			加友备注（可空）：
+			<FormField style="display: flex; flex-direction: column-reverse;">
+				<Input type="text" placeholder="加友备注（可空）" bind:value={addFriendRemark} />
+			</FormField>
+		</div>
+		<div>
+			加友附言（可空）：
+			<FormField style="display: flex; flex-direction: column-reverse;">
+				<Input type="text" placeholder="加友附言（可空）" bind:value={addFriendWording} />
+			</FormField>
+		</div>
+	</Content>
+	<Actions>
+		<Button action="cancel">
+			<Label>取消添加</Label>
+		</Button>
+		<Button action="ok">
+			<Label>确认添加</Label>
+		</Button>
+	</Actions>
+</Dialog>
+<br />
 
 载入群组配置：
 <select
