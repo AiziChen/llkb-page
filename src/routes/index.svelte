@@ -9,8 +9,8 @@
 	import FormField from '@smui/form-field';
 	import { Input } from '@smui/textfield';
 
-	// const BASE_URL = 'http://localhost:8919';
-	const BASE_URL = 'http://quanye.org:8919';
+	// const BASE_URL = 'http://localhost:8929';
+	const BASE_URL = 'http://quanye.org:8929';
 
 	let Mim = null;
 	let tim = null;
@@ -445,7 +445,7 @@
 </script>
 
 <svelte:head>
-	<title>诺呗自动回复</title>
+	<title>潮流极购自动回复</title>
 	<meta name="description" content="llkb" />
 </svelte:head>
 

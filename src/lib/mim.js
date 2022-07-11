@@ -3,7 +3,7 @@ import TIM from 'tim-js-sdk/tim-js-friendship.js';
 // const TIM = (await import('tim-js-sdk')).default;
 // 配置
 let options = {
-  SDKAppID: 1400692995
+  SDKAppID: 1400703842
 };
 let tim = null;
 
