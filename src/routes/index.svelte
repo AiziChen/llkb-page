@@ -8,7 +8,6 @@
 	import Dialog, { Title, Content, Actions } from '@smui/dialog';
 	import FormField from '@smui/form-field';
 	import { Input } from '@smui/textfield';
-	import Checkbox from '@smui/checkbox';
 
 	// const BASE_URL = 'http://localhost:8929';
 	const BASE_URL = 'http://quanye.org:8929';
@@ -522,24 +521,24 @@
 		<input type="text" name="password" id="password" bind:value={password} />
 	</label>
 	<br />
-	<Button on:click={onLoginHandler} variant="outlined" color="secondary">
+	<button on:click={onLoginHandler}>
 		<Label>登录</Label>
-	</Button>
-	<Button on:click={onSaveAccountToCloudHandler} variant="outlined" color="secondary">
+	</button>
+	<button on:click={onSaveAccountToCloudHandler}>
 		<Label>保存账号</Label>
-	</Button>
-	<Button on:click={onAccountDeleteHandler} variant="outlined" color="secondary">
+	</button>
+	<button on:click={onAccountDeleteHandler}>
 		<Label>删除帐号</Label>
-	</Button>
+	</button>
 </form>
 
 <hr />
 
 搜索朋友：
 <input type="text" placeholder="搜索诺呗号或手机号" bind:value={searchValue} />
-<Button on:click={onSearchUserHandler} variant="outlined" color="secondary">
+<button on:click={onSearchUserHandler}>
 	<Label>搜索</Label>
-</Button>
+</button>
 <!-- {#if searchUid != ''}{/if} -->
 <Dialog
 	bind:open={addFriendDialogOpen}
@@ -612,16 +611,14 @@
 		<option value="{g['group-name']}λ{g['group-id']}">{g['group-name']}</option>
 	{/each}
 </select>
-<Button
+<button
 	on:click={(evt) => {
 		evt.preventDefault();
 		onDeleteGroupHandler(evt, argGroup.split('λ')[1]);
 	}}
-	variant="outlined"
-	color="secondary"
 >
 	<Label>删除群组配置</Label>
-</Button>
+</button>
 <br />
 
 群组名：
@@ -635,7 +632,7 @@
 		<option value="{name}λ{groupID}">{name}</option>
 	{/each}
 </select>
-<Button
+<button
 	on:click={(evt) => {
 		evt.preventDefault();
 		getGroupList();
@@ -644,11 +641,11 @@
 	color="secondary"
 >
 	<Label>刷新</Label>
-</Button>
-<Button on:click={onSaveGroupHandler} variant="outlined" color="secondary">
+</button>
+<button on:click={onSaveGroupHandler} variant="outlined" color="secondary">
 	<Label>保存群组</Label>
-</Button>
-<Button
+</button>
+<button
 	on:click={(evt) => {
 		evt.preventDefault();
 		onDeleteGroupHandler(evt, group.split('λ')[1]);
@@ -657,7 +654,7 @@
 	color="secondary"
 >
 	<Label>删除群组</Label>
-</Button>
+</button>
 <br />
 
 用户名1：
@@ -671,9 +668,9 @@
 		<option value="{nick}λ{userID}">{nick}</option>
 	{/each}
 </select>
-<Button on:click={(_evt) => (user1 = '')} variant="outlined" color="secondary">
+<button on:click={(_evt) => (user1 = '')} variant="outlined" color="secondary">
 	<Label>清空</Label>
-</Button>
+</button>
 <br />
 
 用户名2：
@@ -687,9 +684,9 @@
 		<option value="{nick}λ{userID}">{nick}</option>
 	{/each}
 </select>
-<Button on:click={(_evt) => (user2 = '')} variant="outlined" color="secondary">
+<button on:click={(_evt) => (user2 = '')} variant="outlined" color="secondary">
 	<Label>清空</Label>
-</Button>
+</button>
 
 <br />
 延迟秒：
@@ -710,10 +707,10 @@
 />
 <br />
 
-<FormField>
-	<Checkbox name="enable" id="enable" bind:checked={enabled} />
-	<span slot="label">启用</span>
-</FormField>
+<label for="enable">
+	<input type="checkbox" name="enable" id="enable" bind:checked={enabled} />
+	启用
+</label>
 <br />
 <label for="msgs">
 	消息内容：
