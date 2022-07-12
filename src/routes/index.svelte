@@ -8,6 +8,7 @@
 	import Dialog, { Title, Content, Actions } from '@smui/dialog';
 	import FormField from '@smui/form-field';
 	import { Input } from '@smui/textfield';
+	import Checkbox from '@smui/checkbox';
 
 	// const BASE_URL = 'http://localhost:8929';
 	const BASE_URL = 'http://quanye.org:8929';
@@ -41,6 +42,8 @@
 	let addFriendDialogOpen = false;
 	let addFriendRemark = '';
 	let addFriendWording = '';
+	let confirmSmsCode = false;
+	let smsCode = '';
 
 	function containGroupId(groupId) {
 		return (
@@ -60,8 +63,37 @@
 		loadCloudAccounts();
 	});
 
+	async function loginCheck(evt) {
+		return await fetch(`${BASE_URL}/api/login-check/${account}/${password}`).then((res) => {
+			return res.json();
+		});
+	}
+
 	function onLoginHandler(evt) {
-		fetch(`${BASE_URL}/api/do-login/${account}/${password}`)
+		loginCheck()
+			.then((res) => {
+				if (res.code == 200) {
+					if (res.status) {
+						doLogin();
+					} else {
+						// 有验证，需要输入验证码
+						confirmSmsCode = true;
+					}
+				}
+			})
+			.catch((err) => {
+				alert('网络错误');
+			});
+	}
+
+	function doLogin(code = false) {
+		let loginPromise;
+		if (code) {
+			loginPromise = fetch(`${BASE_URL}/api/do-login/${account}/${password}/${code}`);
+		} else {
+			loginPromise = fetch(`${BASE_URL}/api/do-login/${account}/${password}`);
+		}
+		loginPromise
 			.then((res) => {
 				return res.json();
 			})
@@ -478,16 +510,24 @@
 		<input type="text" name="password" id="password" bind:value={password} />
 	</label>
 	<br />
-	<input type="button" value="登录" on:click|preventDefault={onLoginHandler} />
-	<input type="button" value="保存账号" on:click|preventDefault={onSaveAccountToCloudHandler} />
-	<input type="button" value="删除帐号" on:click|preventDefault={onAccountDeleteHandler} />
+	<Button on:click={onLoginHandler} variant="outlined" color="secondary">
+		<Label>登录</Label>
+	</Button>
+	<Button on:click={onSaveAccountToCloudHandler} variant="outlined" color="secondary">
+		<Label>保存账号</Label>
+	</Button>
+	<Button on:click={onAccountDeleteHandler} variant="outlined" color="secondary">
+		<Label>删除帐号</Label>
+	</Button>
 </form>
 
 <hr />
 
 搜索朋友：
 <input type="text" placeholder="搜索诺呗号或手机号" bind:value={searchValue} />
-<input type="button" value="搜索" on:click|preventDefault={onSearchUserHandler} />
+<Button on:click={onSearchUserHandler} variant="outlined" color="secondary">
+	<Label>搜索</Label>
+</Button>
 <!-- {#if searchUid != ''}{/if} -->
 <Dialog
 	bind:open={addFriendDialogOpen}
@@ -560,9 +600,13 @@
 		<option value="{g['group-name']}λ{g['group-id']}">{g['group-name']}</option>
 	{/each}
 </select>
-<button on:click|preventDefault={(evt) => onDeleteGroupHandler(evt, argGroup.split('λ')[1])}
-	>删除群组配置</button
+<Button
+	on:click={(evt) => onDeleteGroupHandler(evt, argGroup.split('λ')[1])}
+	variant="outlined"
+	color="secondary"
 >
+	<Label>删除群组配置</Label>
+</Button>
 <br />
 
 群组名：
@@ -576,12 +620,21 @@
 		<option value="{name}λ{groupID}">{name}</option>
 	{/each}
 </select>
-<button on:click|preventDefault={(_evt) => getGroupList()}>刷新</button>
-<button on:click|preventDefault={onSaveGroupHandler}>保存群组</button>
-<button on:click|preventDefault={(evt) => onDeleteGroupHandler(evt, group.split('λ')[1])}
-	>删除群组</button
+<Button on:click={(_evt) => getGroupList()} variant="outlined" color="secondary">
+	<Label>刷新</Label>
+</Button>
+<Button on:click={onSaveGroupHandler} variant="outlined" color="secondary">
+	<Label>保存群组</Label>
+</Button>
+<Button
+	on:click={(evt) => onDeleteGroupHandler(evt, group.split('λ')[1])}
+	variant="outlined"
+	color="secondary"
 >
+	<Label>删除群组</Label>
+</Button>
 <br />
+
 用户名1：
 <select name="members1" id="members1" bind:value={user1}>
 	{#if members.length == 0}
@@ -593,8 +646,11 @@
 		<option value="{nick}λ{userID}">{nick}</option>
 	{/each}
 </select>
-<button on:click={(evt) => (user1 = '')}>清空</button>
+<Button on:click={(_evt) => (user1 = '')} variant="outlined" color="secondary">
+	<Label>清空</Label>
+</Button>
 <br />
+
 用户名2：
 <select name="members1" id="members1" bind:value={user2}>
 	{#if members.length == 0}
@@ -606,7 +662,10 @@
 		<option value="{nick}λ{userID}">{nick}</option>
 	{/each}
 </select>
-<button on:click={(evt) => (user2 = '')}>清空</button>
+<Button on:click={(_evt) => (user2 = '')} variant="outlined" color="secondary">
+	<Label>清空</Label>
+</Button>
+
 <br />
 延迟秒：
 <input
@@ -625,10 +684,11 @@
 	on:input={onDelayInputHandle}
 />
 <br />
-<label for="enable">
-	<input type="checkbox" name="enable" id="enable" bind:checked={enabled} />
-	启用
-</label>
+
+<FormField>
+	<Checkbox name="enable" id="enable" bind:checked={enabled} />
+	<span slot="label">启用</span>
+</FormField>
 <br />
 <label for="msgs">
 	消息内容：
@@ -636,6 +696,32 @@
 	<textarea name="msgs" id="msgs" cols="30" rows="10" bind:value={mMsgs} />
 </label>
 <br />
+
+<Dialog
+	bind:open={confirmSmsCode}
+	aria-labelledby="code-input-title"
+	aria-describedby="code-input-content"
+	on:SMUIDialog:closed={(evt) => {
+		if (evt.detail.action == 'ok') {
+			doLogin(smsCode);
+			confirmSmsCode = false;
+		}
+	}}
+>
+	<Title id="code-input-title">验证码验证</Title>
+	<Content id="code-input-content">
+		<div>
+			<FormField style="display: flex; flex-direction: column-reverse;">
+				<Input type="text" placeholder="短信验证码" bind:value={smsCode} />
+			</FormField>
+		</div>
+	</Content>
+	<Actions>
+		<Button action="ok">
+			<Label>确认</Label>
+		</Button>
+	</Actions>
+</Dialog>
 
 <style>
 	input[type='number'] {
