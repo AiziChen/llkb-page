@@ -63,13 +63,14 @@
 		loadCloudAccounts();
 	});
 
-	async function loginCheck(evt) {
+	async function loginCheck() {
 		return await fetch(`${BASE_URL}/api/login-check/${account}/${password}`).then((res) => {
 			return res.json();
 		});
 	}
 
 	function onLoginHandler(evt) {
+		evt.preventDefault();
 		loginCheck()
 			.then((res) => {
 				if (res.code == 200) {
@@ -130,7 +131,9 @@
 			});
 	}
 
-	function onAccountDeleteHandler(evt) {}
+	function onAccountDeleteHandler(evt) {
+		evt.preventDefault();
+	}
 
 	function onSdkReady(_evt) {
 		isLogin = true;
@@ -281,6 +284,7 @@
 			});
 	}
 	function onDelayInputHandle(evt) {
+		evt.preventDefault();
 		if (delayStart < 0) {
 			delayStart = 0;
 		}
@@ -290,6 +294,7 @@
 	}
 
 	function onSaveAccountToCloudHandler(evt) {
+		evt.preventDefault();
 		fetch(`${BASE_URL}/api/save-account/${account}/${password}`)
 			.then((res) => {
 				return res.json();
@@ -308,6 +313,7 @@
 	}
 
 	function onSaveGroupHandler(evt) {
+		evt.preventDefault();
 		const groupId = group.split('λ')[1];
 		const groupName = group.split('λ')[0];
 		const userName1 = user1.split('λ')[0];
@@ -351,6 +357,7 @@
 			});
 	}
 	function onDeleteGroupHandler(evt, groupId) {
+		evt.preventDefault();
 		// const groupId = group.split('λ')[1];
 		fetch(`${BASE_URL}/api/delete-group/${account}/${encodeURIComponent(groupId)}`)
 			.then((res) => {
@@ -413,6 +420,7 @@
 			.then((res) => {
 				if (res.code == 200) {
 					password = res.password;
+					console.log(password);
 				} else {
 					password = '';
 				}
@@ -423,6 +431,7 @@
 	}
 
 	function onLoadGroupArgumentsHandler(evt) {
+		evt.preventDefault();
 		if (!argGroup.includes('λ')) {
 			return;
 		}
@@ -435,6 +444,7 @@
 	}
 
 	function onSearchUserHandler(evt) {
+		evt.preventDefault();
 		if (token == '') {
 			alert('请先登录');
 			return;
@@ -461,7 +471,9 @@
 			});
 	}
 
-	function onAddUserHandler(evt) {}
+	function onAddUserHandler(evt) {
+		evt.preventDefault();
+	}
 
 	$: if (account) {
 		onAccountInputHandler(null);
@@ -601,7 +613,10 @@
 	{/each}
 </select>
 <Button
-	on:click={(evt) => onDeleteGroupHandler(evt, argGroup.split('λ')[1])}
+	on:click={(evt) => {
+		evt.preventDefault();
+		onDeleteGroupHandler(evt, argGroup.split('λ')[1]);
+	}}
 	variant="outlined"
 	color="secondary"
 >
@@ -620,14 +635,24 @@
 		<option value="{name}λ{groupID}">{name}</option>
 	{/each}
 </select>
-<Button on:click={(_evt) => getGroupList()} variant="outlined" color="secondary">
+<Button
+	on:click={(evt) => {
+		evt.preventDefault();
+		getGroupList();
+	}}
+	variant="outlined"
+	color="secondary"
+>
 	<Label>刷新</Label>
 </Button>
 <Button on:click={onSaveGroupHandler} variant="outlined" color="secondary">
 	<Label>保存群组</Label>
 </Button>
 <Button
-	on:click={(evt) => onDeleteGroupHandler(evt, group.split('λ')[1])}
+	on:click={(evt) => {
+		evt.preventDefault();
+		onDeleteGroupHandler(evt, group.split('λ')[1]);
+	}}
 	variant="outlined"
 	color="secondary"
 >
